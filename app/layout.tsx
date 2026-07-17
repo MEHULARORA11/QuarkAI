@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import {ThemeProvider} from '../components/providers/theme-provider.tsx'
 import {QueryProvider} from '@/components/providers/query-provider.tsx'
+import { ClerkProvider} from '@clerk/nextjs'
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -33,6 +34,7 @@ export default function RootLayout({
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}
     >
       <body >
+        <ClerkProvider>
         <QueryProvider>
           <ThemeProvider
             attribute="class"
@@ -43,6 +45,7 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
           </QueryProvider>
+          </ClerkProvider>
         </body>
     </html>
   );
