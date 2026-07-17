@@ -9,3 +9,11 @@ export default function Home() {
     </>
   )
 }
+
+/*
+bun add prisma @prisma/client @prisma/adapter-pg
+bunx prisma init => to initialize prizma in our project
+bunx prisma generate => t generate prisma client
+prisma migrate dev
+bunx prisma studio
+*/ 
