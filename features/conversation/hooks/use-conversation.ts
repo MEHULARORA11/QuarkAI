@@ -18,7 +18,7 @@ import { queryKeys } from "../utils/query-keys";
  */
 export function useConversations() {
     return useQuery({
-        queryKey: queryKeys.conversations.all,
+        queryKey: queryKeys.conversations.all, // it is the key of the query which is used to identify the query in the cache and also to invalidate the query when needed
         queryFn: () => listConversations(),
     });
 }

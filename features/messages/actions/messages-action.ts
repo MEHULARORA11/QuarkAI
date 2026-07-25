@@ -112,6 +112,44 @@ export async function listMessages(
       where: { id: messageId },
       include: { conversation: true },
     });
+
+    /**
+     * TypeScript
+  where: { id: messageId },
+where: Specifies the lookup condition.
+
+It instructs the database to search for the record in the Message table where the id column matches the messageId variable.
+
+TypeScript
+  include: { conversation: true },
+});
+include: Performs eager loading / SQL JOIN.
+
+By default, Prisma queries only return scalar fields of the requested table (e.g., id, content, createdAt, userId) and ignore relations.
+
+Setting conversation: true tells Prisma to fetch and attach the full parent Conversation record that this message belongs to.
+
+What the Returned Object Looks Like
+If a message with that ID exists, the variable existing will contain an object formatted like this:
+
+JSON
+{
+  "id": "msg_987",
+  "content": "Hello AI!",
+  "role": "USER",
+  "conversationId": "conv_123",
+  "createdAt": "2026-07-26T01:40:00.000Z",
+  "conversation": {
+    "id": "conv_123",
+    "title": "New Chat",
+    "userId": "user_456",
+    "isPinned": false,
+    "isArchived": false,
+    "createdAt": "2026-07-26T01:00:00.000Z"
+  }
+}
+If no message matches messageId, existing will evaluate to null.
+     */
   
     if (!existing || existing.conversation.userId !== user.id) {
       throw new Error("Message not found");
