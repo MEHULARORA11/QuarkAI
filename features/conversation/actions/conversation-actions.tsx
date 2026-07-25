@@ -111,6 +111,11 @@ export async function updateConversation(
     revalidatePath("/");
     revalidatePath(`/c/${conversationId}`);
     return conversation;
+    /**
+     * revalidatePath("/") clears the cache for the root page to instantly update global UI like the sidebar chat list.
+revalidatePath("/c/${conversationId}") clears the cache for the active chat route to instantly display new messages and chat content.
+Together, they ensure both your sidebar and active conversation screen show fresh database data without requiring a manual page refresh.
+     */
 }
 
 
