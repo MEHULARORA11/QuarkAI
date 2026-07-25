@@ -24,7 +24,7 @@ model User {
 
   conversations Conversation[]
 }
-// why optional => as sometimes e info apne providers se nhin milti so us case main e error de dega  
+// why optional => as sometimes ise info apne providers se nhin milti so us case main e error de dega  
 
 model Conversation {
   id            String   @id @default(cuid())

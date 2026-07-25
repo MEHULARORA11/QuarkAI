@@ -8,7 +8,7 @@ import React from 'react'
  */
 const RootGrouplayout = async ({ children }: { children: React.ReactNode }) => {
 
-    await auth.protect();
+   
     await onBoard();
 
     return (
