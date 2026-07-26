@@ -1,5 +1,5 @@
 import { loadChatMessages, saveChatMessages } from "@/features/ai/actions/chat-store";
-import { readByokKey } from "@/features/ai/actions/byok-actions";
+import { resolveByokKey } from "@/features/ai/actions/byok-actions";
 import { getChatModel } from "@/features/ai/utils/model";
 import { requireUser } from "@/features/auth/action/require-user";
 import { prisma } from "@/lib/db";
@@ -45,7 +45,15 @@ export async function POST(req: Request) {
         await saveChatMessages(id, [message]);
     }
 
-    const userApiKey = await readByokKey();
+    const userApiKey = await resolveByokKey();
+
+    // No fallback to a server-wide key — short-circuit here with a clear message.
+    if (!userApiKey) {
+        return new Response(
+            "No OpenAI API key found for your account. Add one from the sidebar to start chatting.",
+            { status: 401 }
+        );
+    }
 
     const result =  streamText({
         model: getChatModel(conversation.model, userApiKey),
