@@ -1,4 +1,5 @@
 import { loadChatMessages, saveChatMessages } from "@/features/ai/actions/chat-store";
+import { readByokKey } from "@/features/ai/actions/byok-actions";
 import { getChatModel } from "@/features/ai/utils/model";
 import { requireUser } from "@/features/auth/action/require-user";
 import { prisma } from "@/lib/db";
@@ -44,8 +45,10 @@ export async function POST(req: Request) {
         await saveChatMessages(id, [message]);
     }
 
+    const userApiKey = await readByokKey();
+
     const result =  streamText({
-        model: getChatModel(conversation.model),
+        model: getChatModel(conversation.model, userApiKey),
         system: conversation.systemPrompt ?? "You are ChaiGpt , a helpful assistant",
         messages: await convertToModelMessages(messages),
     });
@@ -63,6 +66,19 @@ export async function POST(req: Request) {
             } catch (error) {
                 console.error(error);
             }
+           },
+           onError:(error: unknown): string => {
+               const msg = error instanceof Error ? error.message : String(error);
+               if (
+                   msg.includes("401") ||
+                   msg.includes("invalid_api_key") ||
+                   msg.includes("Incorrect API key") ||
+                   msg.includes("insufficient_quota") ||
+                   msg.includes("You exceeded your current quota")
+               ) {
+                   return "Your OpenAI key looks invalid or out of quota — check it in the sidebar.";
+               }
+               return msg;
            }
         })
     })
