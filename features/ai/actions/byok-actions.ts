@@ -2,15 +2,18 @@
 
 import { cookies } from "next/headers";
 import { requireUser } from "@/features/auth/action/require-user";
+import { prisma } from "@/lib/db";
+import { encryptApiKey, decryptApiKey } from "@/lib/crypto/byok-cipher";
 
-/** Name of the httpOnly cookie that stores the user's raw OpenAI API key. */
+/** Name of the httpOnly cookie used as a short-lived cache for the resolved key. */
 const BYOK_COOKIE = "quark_byok_key";
 
 /**
- * Chrome caps Set-Cookie Max-Age at 400 days and silently truncates anything
- * longer, so there's no benefit to asking for more than that.
+ * The cookie is a cache, not the source of truth — Postgres is. Five minutes
+ * keeps most chat sessions warm without ever going stale for long if the
+ * underlying key is rotated or removed.
  */
-const BYOK_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
+const BYOK_CACHE_MAX_AGE_SECONDS = 60 * 5;
 
 const KEY_FORMAT = /^sk-[A-Za-z0-9_-]{16,}$/;
 
@@ -25,23 +28,35 @@ function baseCookieOptions() {
 }
 
 /**
- * Reports whether the signed-in user currently has a BYOK key saved, without
- * ever exposing the key value itself to the client.
+ * Reports whether the signed-in user currently has a BYOK key saved.
+ * Checks the cache cookie first; falls back to a DB read only if the cookie
+ * is cold. Never exposes the key value itself to the client.
  */
 export async function getByokStatus() {
-  await requireUser();
+  const user = await requireUser();
   const store = await cookies();
-  return { hasKey: Boolean(store.get(BYOK_COOKIE)?.value) };
+
+  if (store.get(BYOK_COOKIE)?.value) {
+    return { hasKey: true };
+  }
+
+  const row = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { openAiApiKey: true },
+  });
+
+  return { hasKey: Boolean(row?.openAiApiKey) };
 }
 
 /**
  * Validates a user-supplied OpenAI API key (format + a live check against
- * OpenAI) and stores it in an httpOnly cookie if valid.
+ * OpenAI), encrypts it, and persists it on the user's row. Also warms the
+ * cache cookie immediately so the next message doesn't need a DB round-trip.
  *
  * @throws {Error} When the key is missing, malformed, or rejected by OpenAI.
  */
 export async function saveByokKey(apiKey: string) {
-  await requireUser();
+  const user = await requireUser();
 
   const trimmed = apiKey.trim();
   if (!trimmed) {
@@ -64,29 +79,73 @@ export async function saveByokKey(apiKey: string) {
     throw new Error("Invalid OpenAI API key. Authentication with OpenAI failed.");
   }
 
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { openAiApiKey: encryptApiKey(trimmed) },
+  });
+
   const store = await cookies();
   store.set(BYOK_COOKIE, trimmed, {
     ...baseCookieOptions(),
-    maxAge: BYOK_MAX_AGE_SECONDS,
+    maxAge: BYOK_CACHE_MAX_AGE_SECONDS,
   });
 
   return { success: true };
 }
 
-/** Removes the saved BYOK key; subsequent chat requests fall back to the app's default key. */
+/** Removes the saved BYOK key from both Postgres and the cache cookie. */
 export async function deleteByokKey() {
-  await requireUser();
+  const user = await requireUser();
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { openAiApiKey: null },
+  });
+
   const store = await cookies();
   store.set(BYOK_COOKIE, "", { ...baseCookieOptions(), maxAge: 0 });
+
   return { success: true };
 }
 
 /**
- * Server-only helper for the chat route. Reads the raw key straight off the
- * cookie store — never exported to a client component, never sent over the
- * wire to the browser again.
+ * Resolves the current user's OpenAI key for a single request:
+ *
+ * 1. Cookie present → return it, no DB call at all (the hot path for almost
+ *    every message once a session is warm).
+ * 2. Cookie absent → read the encrypted key from Postgres. If present,
+ *    decrypt it, write it back into the cookie (5 min), and return it.
+ * 3. Not in Postgres either → return `undefined` so the caller can surface
+ *    "no key configured" instead of silently using any shared server key.
+ *
+ * Safe to call from both a Route Handler (the chat endpoint) and a Server
+ * Action invoked from client code (see `ByokWarmer`) — both contexts allow
+ * cookie mutation. Do NOT call this from a Server Component render.
  */
-export async function readByokKey(): Promise<string | undefined> {
+export async function resolveByokKey(): Promise<string | undefined> {
+  const user = await requireUser();
   const store = await cookies();
-  return store.get(BYOK_COOKIE)?.value || undefined;
+
+  const cached = store.get(BYOK_COOKIE)?.value;
+  if (cached) {
+    return cached;
+  }
+
+  const row = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { openAiApiKey: true },
+  });
+
+  if (!row?.openAiApiKey) {
+    return undefined;
+  }
+
+  const plainKey = decryptApiKey(row.openAiApiKey);
+
+  store.set(BYOK_COOKIE, plainKey, {
+    ...baseCookieOptions(),
+    maxAge: BYOK_CACHE_MAX_AGE_SECONDS,
+  });
+
+  return plainKey;
 }
