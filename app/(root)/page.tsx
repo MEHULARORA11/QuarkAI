@@ -1,16 +1,18 @@
-import Image from "next/image";
-import {ModeToggle} from '@/components/ui/mode-toggle.tsx'
-import { UserButton } from "@clerk/nextjs";
+import { startNewChat } from '@/features/home/actions/start-new-chat'
+import { redirect } from 'next/navigation'
+import React from 'react'
 
-export default function Home() {
-  return(
-    <>
-    <h1>Hello World</h1>
-    <ModeToggle/>
-    <UserButton/>
-    </>
-  )
+/**
+ * Home page — creates a new chat and redirects to `/c/{id}`.
+ */
+const page = async() => {
+  const conversationId = await startNewChat()
+  
+  
+  redirect(`/c/${conversationId}`)
 }
+
+export default page
 
 /*
 bun add prisma @prisma/client @prisma/adapter-pg
