@@ -42,6 +42,7 @@ import {
   useUpdateConversation,
 } from "@/features/conversation/hooks/use-conversation";
 import { cn } from "@/lib/utils";
+import { ByokControl } from "@/features/ai/components/byok-control";
 
 type Conversation = NonNullable<
   ReturnType<typeof useConversations>["data"]
@@ -230,6 +231,9 @@ function SidebarFooterMenu() {
 
   return (
     <SidebarMenu>
+      <SidebarMenuItem>
+        <ByokControl />
+      </SidebarMenuItem>
       <SidebarMenuItem>
         <Button
           type="button"

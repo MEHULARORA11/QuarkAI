@@ -34,7 +34,7 @@ export const ConversationView = ({ conversationId, initialMessages }: Conversati
         })
     }), []);
 
-    const { messages, sendMessage, status } = useChat({
+    const { messages, sendMessage, status, clearError } = useChat({
         id: conversationId,
         messages: initialMessages,
         transport,
@@ -45,6 +45,10 @@ export const ConversationView = ({ conversationId, initialMessages }: Conversati
         },
         onError: (error) => {
             toast.error(error.message);
+            // clearError() only works when status is already "error".
+            // The SDK sets status to "error" synchronously *after* calling onError,
+            // so we defer by one tick to let that happen first.
+            setTimeout(() => clearError(), 0);
         },
     })
     const title =
