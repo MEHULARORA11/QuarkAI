@@ -10,7 +10,7 @@ import { auth } from "@clerk/nextjs/server";
  * @throws {Error} When the user record does not exist in the database.
  */
 export async function requireUser() {
-    const { userId } = await auth.protect();
+    const {userId} = await auth.protect({})
   
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
@@ -22,4 +22,3 @@ export async function requireUser() {
   
     return user;
   }
-  

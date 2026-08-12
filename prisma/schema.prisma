@@ -70,8 +70,8 @@ model Message {
    parts          Json?  // 
    metadata       Json? 
 
-   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade) // note this is done on child side , like here message is child of conversation so if conversation is deleted then all messages will be deleted
-
+   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade) // note  => this is done on child side , like here message is child of conversation so if conversation is deleted then all messages will be deleted
+          // this Cascade onDelete => is called Cascade effect
    createdAt DateTime @default(now())
    updatedAt DateTime @updatedAt
 

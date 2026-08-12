@@ -20,19 +20,19 @@ export async function onBoard() {
     const email = clerkUser.emailAddresses[0]?.emailAddress ?? null;
 
     return prisma.user.upsert({ // upsert => Create or update one User.
-        where: { clerkId: clerkUser.id },
+        where: { clerkId: clerkUser.id }, // if it found the matching clerkid in db in User table , then it will run updaye query else create one
         create: {
             clerkId: clerkUser.id,
             email,
-            firstName: clerkUser.firstName,
-            lastName: clerkUser.lastName,
-            imageUrl: clerkUser.imageUrl
+            firstName: clerkUser?.firstName,
+            lastName: clerkUser?.lastName,
+            imageUrl: clerkUser?.imageUrl
         },
         update: {
             email,
-            firstName: clerkUser.firstName,
-            lastName: clerkUser.lastName,
-            imageUrl: clerkUser.imageUrl
+            firstName: clerkUser?.firstName,
+            lastName: clerkUser?.lastName,
+            imageUrl: clerkUser?.imageUrl
         }
     })
 }
