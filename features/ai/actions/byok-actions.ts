@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { requireUser } from "@/features/auth/action/require-user";
+import { requireUser } from "@/features/auth/actions/require-user";
 import { prisma } from "@/lib/db";
 import { encryptApiKey, decryptApiKey } from "@/lib/crypto/byok-cipher";
 

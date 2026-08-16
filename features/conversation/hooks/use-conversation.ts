@@ -63,7 +63,7 @@ export function useUpdateConversation() {
                 queryKey: queryKeys.conversations.all,
             });
             void queryClient.invalidateQueries({
-                queryKey: queryKeys.conversations.detail(conversation.id),
+                queryKey: queryKeys.conversations.detail(conversation.id),// this is a dead code .. , as in this file nowhere we have done something like useQuery({queryKey:query-key.conversations.detail(id)})
             });
         },
         onError: (error: Error) => {
@@ -84,7 +84,7 @@ export function useDeleteConversation(activeId?: string) {
                 queryKey: queryKeys.conversations.all,
             });
             queryClient.removeQueries({
-                queryKey: queryKeys.messages.byConversation(id),
+                queryKey: queryKeys.messages.byConversation(id), // dead code
             });
 
             if (activeId === id) {

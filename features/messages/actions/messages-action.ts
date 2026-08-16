@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { requireUser } from "@/features/auth/action/require-user";
+import { requireUser } from "@/features/auth/actions/require-user";
 import { prisma } from "@/lib/db";
 import type { MessageRole } from "@/lib/generated/prisma/client";
 
