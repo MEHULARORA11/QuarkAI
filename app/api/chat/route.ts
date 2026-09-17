@@ -65,7 +65,7 @@ export async function POST(req: Request) {
 
     const result =  streamText({
         model: getChatModel(conversation.model, userApiKey),
-        system: conversation.systemPrompt ?? "You are ChaiGpt , a helpful assistant",
+        system: conversation.systemPrompt ?? "You are Quark AI , a helpful assistant",
         messages: await convertToModelMessages(messages),
     });
 
